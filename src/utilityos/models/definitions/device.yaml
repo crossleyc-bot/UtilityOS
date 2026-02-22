@@ -1,0 +1,165 @@
+version: "1.0"
+
+entity:
+  name: device
+  display_name: "Device"
+  description: "A communication or AMI (Advanced Metering Infrastructure) device associated with a meter. Devices transmit meter readings wirelessly and report meter health data."
+  domain: metering
+  version: "1.0.0"
+  owner: metering_ops
+  scd_type: 1
+
+keys:
+  surrogate:
+    name: device_sk
+    data_type: bigint
+    generated: "ALWAYS AS IDENTITY"
+    description: "Surrogate key (system-generated)"
+  business:
+    - name: device_id
+      data_type: varchar
+      length: 50
+      nullable: false
+      description: "Unique business identifier for the communication device"
+
+foreign_keys:
+  - name: meter_sk
+    data_type: bigint
+    nullable: true
+    references:
+      entity: meter
+      key: meter_sk
+    description: "Reference to the meter this device is attached to (NULL if unassigned)"
+
+attributes:
+  - name: device_type
+    data_type: varchar
+    length: 50
+    nullable: false
+    description: "Type of communication device (e.g., RADIO, CELLULAR, PLC)"
+    pii_classification: none
+    scd_type: 1
+
+  - name: manufacturer
+    data_type: varchar
+    length: 100
+    nullable: true
+    description: "Device manufacturer name"
+    pii_classification: none
+    scd_type: 0
+
+  - name: model
+    data_type: varchar
+    length: 100
+    nullable: true
+    description: "Device model designation"
+    pii_classification: none
+    scd_type: 0
+
+  - name: firmware_version
+    data_type: varchar
+    length: 50
+    nullable: true
+    description: "Current firmware version installed on the device"
+    pii_classification: none
+    scd_type: 1
+
+  - name: status
+    data_type: varchar
+    length: 50
+    nullable: false
+    description: "Device operational status (ACTIVE, INACTIVE, FAILED, DECOMMISSIONED)"
+    pii_classification: none
+    scd_type: 1
+
+  - name: communication_protocol
+    data_type: varchar
+    length: 50
+    nullable: true
+    description: "Communication protocol used (e.g., RF_MESH, CELLULAR_LTE, PLC, WIFI)"
+    pii_classification: none
+    scd_type: 1
+
+  - name: install_date
+    data_type: date
+    nullable: true
+    description: "Date the device was installed"
+    pii_classification: none
+    scd_type: 0
+
+  - name: last_communication_at
+    data_type: timestamp_tz
+    nullable: true
+    description: "Timestamp of the last successful communication from the device"
+    pii_classification: none
+    scd_type: 1
+
+  - name: signal_strength
+    data_type: integer
+    nullable: true
+    description: "Last reported signal strength in dBm"
+    pii_classification: none
+    scd_type: 1
+
+relationships:
+  - name: device_meter
+    type: one_to_many
+    target_entity: meter
+    foreign_key_on: device
+    foreign_key_column: meter_sk
+    description: "Each device is associated with one meter"
+
+indexes:
+  - name: idx_device_id
+    columns: [device_id]
+    unique: true
+    description: "Unique index on business key"
+
+  - name: idx_device_meter_sk
+    columns: [meter_sk]
+    unique: false
+    description: "Index for meter lookup"
+
+  - name: idx_device_status
+    columns: [status]
+    unique: false
+    description: "Index for filtering by device status"
+
+  - name: idx_device_last_comm
+    columns: [last_communication_at]
+    unique: false
+    description: "Index for identifying stale devices"
+
+quality_rules:
+  - rule: "device_id IS NOT NULL"
+    severity: error
+    description: "Device ID must always be present"
+
+  - rule: "device_type IS NOT NULL"
+    severity: error
+    description: "Device type must be specified"
+
+  - rule: "status IS NOT NULL"
+    severity: error
+    description: "Device status must be specified"
+
+  - rule: "CASE WHEN signal_strength IS NOT NULL THEN signal_strength BETWEEN -120 AND 0 ELSE TRUE END"
+    severity: warning
+    description: "Signal strength should be within typical dBm range"
+
+  - rule: "CASE WHEN last_communication_at IS NOT NULL THEN last_communication_at <= CURRENT_TIMESTAMP ELSE TRUE END"
+    severity: error
+    description: "Last communication timestamp cannot be in the future"
+
+gold_layer:
+  table_type: dimension
+  grain:
+    - device_sk
+  update_frequency: daily
+  partition:
+    strategy: none
+  tags:
+    - device
+    - ami
+    - metering
+    - dimension

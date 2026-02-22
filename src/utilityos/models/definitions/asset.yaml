@@ -1,0 +1,121 @@
+entity:
+  name: asset
+  display_name: "Asset"
+  description: "A physical infrastructure asset owned and maintained by the utility."
+  domain: "asset_management"
+  version: "1.0.0"
+  scd_type: 2
+  include_audit_columns: true
+
+keys:
+  surrogate:
+    name: asset_sk
+    data_type: bigint
+    generated: "ALWAYS AS IDENTITY"
+  business:
+    - name: asset_number
+      data_type: varchar
+      length: 50
+      description: "Unique asset identifier"
+      source_of_truth: true
+
+attributes:
+  - name: asset_type
+    data_type: varchar
+    length: 50
+    nullable: false
+    enum_ref: asset_type
+
+  - name: description
+    data_type: text
+    nullable: true
+
+  - name: status
+    data_type: varchar
+    length: 30
+    nullable: false
+    enum_ref: asset_status
+
+  - name: condition
+    data_type: varchar
+    length: 20
+    nullable: true
+    enum_ref: asset_condition
+
+  - name: install_date
+    data_type: date
+    nullable: true
+
+  - name: retirement_date
+    data_type: date
+    nullable: true
+
+  - name: manufacturer
+    data_type: varchar
+    length: 100
+    nullable: true
+
+  - name: model
+    data_type: varchar
+    length: 100
+    nullable: true
+
+  - name: serial_number
+    data_type: varchar
+    length: 100
+    nullable: true
+
+  - name: location_description
+    data_type: varchar
+    length: 255
+    nullable: true
+
+  - name: latitude
+    data_type: numeric
+    precision: 10
+    scale: 7
+    nullable: true
+
+  - name: longitude
+    data_type: numeric
+    precision: 10
+    scale: 7
+    nullable: true
+
+  - name: parent_asset_sk
+    data_type: bigint
+    nullable: true
+
+  - name: replacement_cost
+    data_type: numeric
+    precision: 14
+    scale: 2
+    nullable: true
+
+  - name: expected_life_years
+    data_type: integer
+    nullable: true
+
+indexes:
+  - columns: [asset_number]
+    unique: true
+    where: "is_current = true"
+
+  - columns: [asset_type]
+    unique: false
+
+quality_rules:
+  - rule: not_null
+    columns: [asset_number, asset_type, status]
+
+  - rule: enum_valid
+    column: asset_type
+    enum_ref: asset_type
+
+  - rule: enum_valid
+    column: status
+    enum_ref: asset_status
+
+gold_layer:
+  dimension: true
+  dimension_type: "SCD2"

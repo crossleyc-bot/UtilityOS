@@ -1,0 +1,65 @@
+mapping:
+  name: example_cis_customer
+  source_system: example_cis
+  source_table: CUST_MASTER
+  target_entity: customer
+  version: "1.0.0"
+  description: "Example mapping from a CIS customer master to canonical customer model"
+
+field_mappings:
+  - source: CUST_NO
+    target: customer_number
+    transform: trim
+
+  - source: FNAME
+    target: first_name
+    transform: trim|title_case
+
+  - source: LNAME
+    target: last_name
+    transform: trim|title_case
+
+  - source: ORG_NAME
+    target: organization_name
+    transform: trim
+
+  - source: CUST_TYPE_CD
+    target: customer_type
+    transform: code_map
+    code_map:
+      "R": "RESIDENTIAL"
+      "C": "COMMERCIAL"
+      "I": "INDUSTRIAL"
+      "M": "MUNICIPAL"
+      _default: "OTHER"
+
+  - source: STATUS_CD
+    target: status
+    transform: code_map
+    code_map:
+      "A": "ACTIVE"
+      "I": "INACTIVE"
+      "C": "CLOSED"
+      "P": "PENDING"
+
+  - source: EMAIL
+    target: email_address
+    transform: trim|lowercase
+
+  - source: PHONE1
+    target: phone_primary
+    transform: phone_normalize
+
+  - source: CUST_SINCE_DT
+    target: customer_since
+    transform: date_parse
+    format: "%m/%d/%Y"
+
+identity_resolution:
+  match_on: [customer_number]
+  fuzzy_match: false
+
+incremental:
+  strategy: modified_date
+  column: LAST_UPDATE_DT
+  format: "%Y-%m-%d %H:%M:%S"

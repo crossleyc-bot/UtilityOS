@@ -1,0 +1,187 @@
+version: "1.0"
+
+entity:
+  name: premise
+  display_name: "Premise"
+  description: "A physical location or address that receives or can receive utility service. A premise is independent of the customer and account and persists through changes in tenancy."
+  domain: service_management
+  version: "1.0.0"
+  owner: field_ops
+  scd_type: 2
+
+keys:
+  surrogate:
+    name: premise_sk
+    data_type: bigint
+    generated: "ALWAYS AS IDENTITY"
+    description: "Surrogate key (system-generated)"
+  business:
+    - name: premise_number
+      data_type: varchar
+      length: 20
+      nullable: false
+      description: "Unique business identifier for the premise"
+
+attributes:
+  - name: address_line1
+    data_type: varchar
+    length: 255
+    nullable: false
+    description: "Street address line 1"
+    pii_classification: quasi_identifier
+    scd_type: 2
+
+  - name: address_line2
+    data_type: varchar
+    length: 255
+    nullable: true
+    description: "Street address line 2 (suite, unit, etc.)"
+    pii_classification: quasi_identifier
+    scd_type: 2
+
+  - name: city
+    data_type: varchar
+    length: 100
+    nullable: false
+    description: "City name"
+    pii_classification: quasi_identifier
+    scd_type: 2
+
+  - name: state
+    data_type: varchar
+    length: 2
+    nullable: false
+    description: "State abbreviation"
+    pii_classification: quasi_identifier
+    scd_type: 2
+
+  - name: zip_code
+    data_type: varchar
+    length: 10
+    nullable: false
+    description: "ZIP/postal code"
+    pii_classification: quasi_identifier
+    scd_type: 2
+
+  - name: county
+    data_type: varchar
+    length: 100
+    nullable: true
+    description: "County name for the premise location"
+    pii_classification: none
+    scd_type: 2
+
+  - name: latitude
+    data_type: numeric
+    precision: 10
+    scale: 7
+    nullable: true
+    description: "Geographic latitude coordinate"
+    pii_classification: none
+    scd_type: 1
+
+  - name: longitude
+    data_type: numeric
+    precision: 10
+    scale: 7
+    nullable: true
+    description: "Geographic longitude coordinate"
+    pii_classification: none
+    scd_type: 1
+
+  - name: premise_type
+    data_type: varchar
+    length: 50
+    nullable: false
+    description: "Premise classification"
+    enum_ref: premise_type
+    scd_type: 2
+
+  - name: lot_size
+    data_type: numeric
+    precision: 10
+    scale: 2
+    nullable: true
+    description: "Lot size in square feet"
+    pii_classification: none
+    scd_type: 1
+
+  - name: year_built
+    data_type: integer
+    nullable: true
+    description: "Year the structure was built"
+    pii_classification: none
+    scd_type: 0
+
+  - name: occupancy_status
+    data_type: varchar
+    length: 50
+    nullable: true
+    description: "Current occupancy status (OCCUPIED, VACANT, UNKNOWN)"
+    pii_classification: none
+    scd_type: 1
+
+relationships:
+  - name: premise_service_points
+    type: one_to_many
+    target_entity: service_point
+    foreign_key: premise_sk
+    description: "A premise may have one or more service points for different utility services"
+
+indexes:
+  - name: idx_premise_number
+    columns: [premise_number]
+    unique: true
+    description: "Unique index on business key"
+
+  - name: idx_premise_zip
+    columns: [zip_code]
+    unique: false
+    description: "Index for geographic lookups"
+
+  - name: idx_premise_city_state
+    columns: [state, city]
+    unique: false
+    description: "Index for geographic filtering"
+
+  - name: idx_premise_type
+    columns: [premise_type]
+    unique: false
+    description: "Index for filtering by premise type"
+
+quality_rules:
+  - rule: "premise_number IS NOT NULL"
+    severity: error
+    description: "Premise number must always be present"
+
+  - rule: "address_line1 IS NOT NULL AND city IS NOT NULL AND state IS NOT NULL AND zip_code IS NOT NULL"
+    severity: error
+    description: "Core address fields are required"
+
+  - rule: "LENGTH(state) = 2"
+    severity: warning
+    description: "State should be a 2-character abbreviation"
+
+  - rule: "CASE WHEN latitude IS NOT NULL THEN latitude BETWEEN -90 AND 90 ELSE TRUE END"
+    severity: error
+    description: "Latitude must be within valid range"
+
+  - rule: "CASE WHEN longitude IS NOT NULL THEN longitude BETWEEN -180 AND 180 ELSE TRUE END"
+    severity: error
+    description: "Longitude must be within valid range"
+
+  - rule: "premise_type IN (SELECT code FROM enum_premise_type)"
+    severity: error
+    description: "Premise type must be a valid enum value"
+
+gold_layer:
+  table_type: dimension
+  grain:
+    - premise_sk
+  update_frequency: daily
+  partition:
+    strategy: none
+  tags:
+    - premise
+    - location
+    - dimension

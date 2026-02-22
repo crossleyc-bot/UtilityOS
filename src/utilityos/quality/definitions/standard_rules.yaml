@@ -1,0 +1,27 @@
+# Standard quality rules auto-applied across all entities.
+# These supplement the entity-specific rules defined inline.
+
+version: "1.0"
+
+global_rules:
+  - rule: not_null
+    description: "All surrogate keys must be non-null"
+    scope: surrogate_keys
+
+  - rule: not_null
+    description: "All business keys must be non-null"
+    scope: business_keys
+
+  - rule: uniqueness
+    description: "Business keys must be unique (within current records for SCD2)"
+    scope: business_keys
+
+  - rule: not_null
+    description: "Audit column source_system must be non-null"
+    scope: audit_columns
+    columns: [source_system, batch_id]
+
+  - rule: not_null
+    description: "SCD2 control columns must be non-null"
+    scope: scd2_columns
+    columns: [effective_from, is_current, version_number]

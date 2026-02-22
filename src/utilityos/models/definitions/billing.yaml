@@ -1,0 +1,117 @@
+entity:
+  name: billing
+  display_name: "Billing"
+  description: "A bill or invoice generated for a utility account for a specific billing period."
+  domain: "revenue_operations"
+  version: "1.0.0"
+  scd_type: 0
+  include_audit_columns: true
+
+keys:
+  surrogate:
+    name: billing_sk
+    data_type: bigint
+    generated: "ALWAYS AS IDENTITY"
+  business:
+    - name: bill_number
+      data_type: varchar
+      length: 30
+      description: "Unique bill identifier"
+      source_of_truth: true
+
+attributes:
+  - name: account_sk
+    data_type: bigint
+    nullable: false
+    description: "Reference to the account this bill belongs to"
+
+  - name: billing_period_start
+    data_type: date
+    nullable: false
+    description: "Start date of the billing period"
+
+  - name: billing_period_end
+    data_type: date
+    nullable: false
+    description: "End date of the billing period"
+
+  - name: bill_date
+    data_type: date
+    nullable: false
+    description: "Date the bill was generated"
+
+  - name: due_date
+    data_type: date
+    nullable: false
+    description: "Payment due date"
+
+  - name: total_amount
+    data_type: numeric
+    precision: 12
+    scale: 2
+    nullable: false
+    description: "Total billed amount for the period"
+
+  - name: amount_due
+    data_type: numeric
+    precision: 12
+    scale: 2
+    nullable: false
+    description: "Total amount due including previous balance"
+
+  - name: previous_balance
+    data_type: numeric
+    precision: 12
+    scale: 2
+    nullable: false
+    default: "0.00"
+    description: "Balance carried forward from prior billing period"
+
+  - name: status
+    data_type: varchar
+    length: 30
+    nullable: false
+    description: "Bill lifecycle status"
+    enum_ref: billing_status
+
+  - name: days_in_period
+    data_type: integer
+    nullable: false
+    description: "Number of days in the billing period"
+
+  - name: bill_cycle
+    data_type: varchar
+    length: 10
+    nullable: true
+    description: "Billing cycle identifier"
+
+relationships:
+  - name: account
+    target_entity: account
+    type: one_to_many
+    foreign_key_on: billing
+    foreign_key_column: account_sk
+    description: "Each bill belongs to one account"
+
+indexes:
+  - columns: [bill_number]
+    unique: true
+
+  - columns: [account_sk]
+    unique: false
+
+  - columns: [bill_date]
+    unique: false
+
+quality_rules:
+  - rule: not_null
+    columns: [bill_number, account_sk, status, total_amount]
+
+  - rule: enum_valid
+    column: status
+    enum_ref: billing_status
+
+gold_layer:
+  fact: true
+  grain: ["billing_sk"]
+  measures: ["total_amount", "amount_due", "previous_balance"]

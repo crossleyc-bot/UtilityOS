@@ -1,0 +1,90 @@
+entity:
+  name: payment
+  display_name: "Payment"
+  description: "A payment transaction applied to a utility account."
+  domain: "revenue_operations"
+  version: "1.0.0"
+  scd_type: 0
+  include_audit_columns: true
+
+keys:
+  surrogate:
+    name: payment_sk
+    data_type: bigint
+    generated: "ALWAYS AS IDENTITY"
+  business:
+    - name: payment_id
+      data_type: varchar
+      length: 50
+      description: "Unique payment transaction identifier"
+      source_of_truth: true
+
+attributes:
+  - name: account_sk
+    data_type: bigint
+    nullable: false
+    description: "Reference to the account"
+
+  - name: payment_date
+    data_type: date
+    nullable: false
+    description: "Date payment was received"
+
+  - name: payment_amount
+    data_type: numeric
+    precision: 12
+    scale: 2
+    nullable: false
+    description: "Payment amount"
+
+  - name: payment_method
+    data_type: varchar
+    length: 30
+    nullable: false
+    description: "Method of payment"
+    enum_ref: payment_method
+
+  - name: status
+    data_type: varchar
+    length: 30
+    nullable: false
+    description: "Payment processing status"
+    enum_ref: payment_status
+
+  - name: reference_number
+    data_type: varchar
+    length: 50
+    nullable: true
+    description: "External reference or check number"
+
+  - name: applied_to_bill_sk
+    data_type: bigint
+    nullable: true
+    description: "Reference to the bill this payment was applied to"
+
+indexes:
+  - columns: [payment_id]
+    unique: true
+
+  - columns: [account_sk]
+    unique: false
+
+  - columns: [payment_date]
+    unique: false
+
+quality_rules:
+  - rule: not_null
+    columns: [payment_id, account_sk, payment_date, payment_amount, payment_method, status]
+
+  - rule: enum_valid
+    column: payment_method
+    enum_ref: payment_method
+
+  - rule: enum_valid
+    column: status
+    enum_ref: payment_status
+
+gold_layer:
+  fact: true
+  grain: ["payment_sk"]
+  measures: ["payment_amount"]

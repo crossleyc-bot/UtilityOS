@@ -1,0 +1,128 @@
+entity:
+  name: usage_monthly
+  display_name: "Usage Monthly"
+  description: "Monthly aggregated usage/consumption data for a service point."
+  domain: "metering_operations"
+  version: "1.0.0"
+  scd_type: 0
+  include_audit_columns: true
+
+keys:
+  surrogate:
+    name: usage_monthly_sk
+    data_type: bigint
+    generated: "ALWAYS AS IDENTITY"
+  business:
+    - name: usage_monthly_id
+      data_type: varchar
+      length: 100
+      description: "Composite key: service_point + period"
+      source_of_truth: true
+
+attributes:
+  - name: service_point_sk
+    data_type: bigint
+    nullable: false
+    description: "Reference to the service point"
+
+  - name: meter_sk
+    data_type: bigint
+    nullable: true
+    description: "Reference to the meter"
+
+  - name: usage_period_start
+    data_type: date
+    nullable: false
+    description: "Start of usage measurement period"
+
+  - name: usage_period_end
+    data_type: date
+    nullable: false
+    description: "End of usage measurement period"
+
+  - name: read_date
+    data_type: date
+    nullable: true
+    description: "Date the meter was read"
+
+  - name: previous_read
+    data_type: numeric
+    precision: 14
+    scale: 4
+    nullable: true
+    description: "Previous meter reading value"
+
+  - name: current_read
+    data_type: numeric
+    precision: 14
+    scale: 4
+    nullable: true
+    description: "Current meter reading value"
+
+  - name: consumption
+    data_type: numeric
+    precision: 14
+    scale: 4
+    nullable: false
+    description: "Calculated consumption for the period"
+
+  - name: demand_value
+    data_type: numeric
+    precision: 12
+    scale: 4
+    nullable: true
+    description: "Peak demand value"
+
+  - name: usage_type
+    data_type: varchar
+    length: 30
+    nullable: false
+    description: "How the reading was obtained"
+    enum_ref: usage_type
+
+  - name: uom
+    data_type: varchar
+    length: 10
+    nullable: false
+    description: "Unit of measure"
+    enum_ref: usage_uom
+
+  - name: days_in_period
+    data_type: integer
+    nullable: true
+    description: "Number of days in the usage period"
+
+  - name: estimated_flag
+    data_type: boolean
+    nullable: false
+    default: "false"
+    description: "Whether the reading was estimated"
+
+indexes:
+  - columns: [usage_monthly_id]
+    unique: true
+
+  - columns: [service_point_sk, usage_period_start]
+    unique: false
+
+quality_rules:
+  - rule: not_null
+    columns: [usage_monthly_id, service_point_sk, consumption, usage_type, uom]
+
+  - rule: enum_valid
+    column: usage_type
+    enum_ref: usage_type
+
+  - rule: enum_valid
+    column: uom
+    enum_ref: usage_uom
+
+partitioning:
+  strategy: range
+  column: usage_period_start
+  interval: monthly
+
+gold_layer:
+  fact: true
+  grain: ["service_point_sk", "usage_period_start"]
+  measures: ["consumption", "demand_value"]

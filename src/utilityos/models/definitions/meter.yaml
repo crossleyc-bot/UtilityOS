@@ -1,0 +1,198 @@
+version: "1.0"
+
+entity:
+  name: meter
+  display_name: "Meter"
+  description: "A physical metering device that measures utility consumption (electricity, water, gas) at a service point. Meters may be replaced over time and have their own lifecycle."
+  domain: metering
+  version: "1.0.0"
+  owner: metering_ops
+  scd_type: 2
+
+keys:
+  surrogate:
+    name: meter_sk
+    data_type: bigint
+    generated: "ALWAYS AS IDENTITY"
+    description: "Surrogate key (system-generated)"
+  business:
+    - name: meter_number
+      data_type: varchar
+      length: 30
+      nullable: false
+      description: "Unique business identifier for the meter (typically stamped on the device)"
+
+foreign_keys:
+  - name: service_point_sk
+    data_type: bigint
+    nullable: true
+    references:
+      entity: service_point
+      key: service_point_sk
+    description: "Reference to the service point where the meter is currently installed (NULL if in inventory)"
+
+attributes:
+  - name: meter_type
+    data_type: varchar
+    length: 50
+    nullable: false
+    description: "Meter technology type"
+    enum_ref: meter_type
+    pii_classification: none
+    scd_type: 2
+
+  - name: manufacturer
+    data_type: varchar
+    length: 100
+    nullable: true
+    description: "Meter manufacturer name"
+    pii_classification: none
+    scd_type: 0
+
+  - name: model
+    data_type: varchar
+    length: 100
+    nullable: true
+    description: "Meter model designation"
+    pii_classification: none
+    scd_type: 0
+
+  - name: serial_number
+    data_type: varchar
+    length: 50
+    nullable: true
+    description: "Manufacturer serial number"
+    pii_classification: none
+    scd_type: 0
+
+  - name: status
+    data_type: varchar
+    length: 50
+    nullable: false
+    description: "Meter operational status"
+    enum_ref: meter_status
+    pii_classification: none
+    scd_type: 2
+
+  - name: install_date
+    data_type: date
+    nullable: true
+    description: "Date the meter was installed at the current service point"
+    pii_classification: none
+    scd_type: 2
+
+  - name: removal_date
+    data_type: date
+    nullable: true
+    description: "Date the meter was removed from service"
+    pii_classification: none
+    scd_type: 2
+
+  - name: last_test_date
+    data_type: date
+    nullable: true
+    description: "Date of the last accuracy test"
+    pii_classification: none
+    scd_type: 1
+
+  - name: multiplier
+    data_type: numeric
+    precision: 8
+    scale: 4
+    nullable: false
+    default: "1.0000"
+    description: "Meter read multiplier factor applied to raw reads to calculate actual consumption"
+    pii_classification: none
+    scd_type: 2
+
+  - name: register_count
+    data_type: smallint
+    nullable: false
+    default: "1"
+    description: "Number of measurement registers on the meter"
+    pii_classification: none
+    scd_type: 0
+
+relationships:
+  - name: meter_service_point
+    type: one_to_many
+    target_entity: service_point
+    foreign_key_on: meter
+    foreign_key_column: service_point_sk
+    description: "Each meter is installed at one service point (or in inventory)"
+
+  - name: meter_devices
+    type: one_to_many
+    target_entity: device
+    foreign_key: meter_sk
+    description: "A meter may have communication devices attached"
+
+  - name: meter_usage_monthly
+    type: one_to_many
+    target_entity: usage_monthly
+    foreign_key: meter_sk
+    description: "A meter produces monthly usage records"
+
+  - name: meter_usage_interval
+    type: one_to_many
+    target_entity: usage_interval
+    foreign_key: meter_sk
+    description: "A meter produces interval usage records"
+
+indexes:
+  - name: idx_meter_number
+    columns: [meter_number]
+    unique: true
+    description: "Unique index on business key"
+
+  - name: idx_meter_service_point_sk
+    columns: [service_point_sk]
+    unique: false
+    description: "Index for service point lookup"
+
+  - name: idx_meter_status
+    columns: [status]
+    unique: false
+    description: "Index for filtering by meter status"
+
+  - name: idx_meter_serial_number
+    columns: [serial_number]
+    unique: false
+    description: "Index for serial number lookups"
+
+quality_rules:
+  - rule: "meter_number IS NOT NULL"
+    severity: error
+    description: "Meter number must always be present"
+
+  - rule: "meter_type IN (SELECT code FROM enum_meter_type)"
+    severity: error
+    description: "Meter type must be a valid enum value"
+
+  - rule: "status IN (SELECT code FROM enum_meter_status)"
+    severity: error
+    description: "Meter status must be a valid enum value"
+
+  - rule: "multiplier > 0"
+    severity: error
+    description: "Meter multiplier must be positive"
+
+  - rule: "CASE WHEN removal_date IS NOT NULL AND install_date IS NOT NULL THEN removal_date >= install_date ELSE TRUE END"
+    severity: error
+    description: "Removal date must be on or after install date"
+
+  - rule: "register_count >= 1"
+    severity: error
+    description: "Meter must have at least one register"
+
+gold_layer:
+  table_type: dimension
+  grain:
+    - meter_sk
+  update_frequency: daily
+  partition:
+    strategy: none
+  tags:
+    - meter
+    - metering
+    - dimension

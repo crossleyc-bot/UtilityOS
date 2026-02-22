@@ -1,0 +1,179 @@
+version: "1.0"
+
+entity:
+  name: customer
+  display_name: "Customer"
+  description: "A person or organization that has a financial relationship with the utility company. Customers may hold one or more accounts."
+  domain: customer_management
+  version: "1.0.0"
+  owner: customer_ops
+  scd_type: 2
+
+keys:
+  surrogate:
+    name: customer_sk
+    data_type: bigint
+    generated: "ALWAYS AS IDENTITY"
+    description: "Surrogate key (system-generated)"
+  business:
+    - name: customer_number
+      data_type: varchar
+      length: 20
+      nullable: false
+      description: "Unique business identifier for the customer"
+
+attributes:
+  - name: first_name
+    data_type: varchar
+    length: 100
+    nullable: true
+    description: "Customer first name (for individual customers)"
+    pii_classification: direct_identifier
+    scd_type: 2
+
+  - name: last_name
+    data_type: varchar
+    length: 100
+    nullable: true
+    description: "Customer last name (for individual customers)"
+    pii_classification: direct_identifier
+    scd_type: 2
+
+  - name: organization_name
+    data_type: varchar
+    length: 255
+    nullable: true
+    description: "Organization or business name (for non-residential customers)"
+    pii_classification: none
+    scd_type: 2
+
+  - name: customer_type
+    data_type: varchar
+    length: 50
+    nullable: false
+    description: "Customer classification"
+    enum_ref: customer_type
+    scd_type: 2
+
+  - name: customer_class
+    data_type: varchar
+    length: 50
+    nullable: true
+    description: "Customer sub-classification for rate and reporting purposes"
+    enum_ref: customer_class
+    scd_type: 2
+
+  - name: status
+    data_type: varchar
+    length: 50
+    nullable: false
+    description: "Customer lifecycle status"
+    enum_ref: customer_status
+    scd_type: 2
+
+  - name: email_address
+    data_type: varchar
+    length: 255
+    nullable: true
+    description: "Primary email address for customer communications"
+    pii_classification: direct_identifier
+    scd_type: 1
+
+  - name: phone_primary
+    data_type: varchar
+    length: 20
+    nullable: true
+    description: "Primary phone number"
+    pii_classification: direct_identifier
+    scd_type: 1
+
+  - name: date_of_birth
+    data_type: date
+    nullable: true
+    description: "Customer date of birth (for individual customers)"
+    pii_classification: direct_identifier
+    scd_type: 2
+
+  - name: tax_id
+    data_type: varchar
+    length: 20
+    nullable: true
+    description: "Tax identification number (SSN or EIN)"
+    pii_classification: sensitive_identifier
+    scd_type: 2
+
+  - name: customer_since
+    data_type: date
+    nullable: false
+    description: "Date the customer relationship began"
+    pii_classification: none
+    scd_type: 0
+
+  - name: credit_score_band
+    data_type: varchar
+    length: 20
+    nullable: true
+    description: "Credit score band for risk assessment (e.g., EXCELLENT, GOOD, FAIR, POOR)"
+    pii_classification: none
+    scd_type: 1
+
+relationships:
+  - name: customer_accounts
+    type: one_to_many
+    target_entity: account
+    foreign_key: customer_sk
+    description: "A customer may hold one or more utility accounts"
+
+indexes:
+  - name: idx_customer_number
+    columns: [customer_number]
+    unique: true
+    description: "Unique index on business key"
+
+  - name: idx_customer_status
+    columns: [status]
+    unique: false
+    description: "Index for filtering by customer status"
+
+  - name: idx_customer_name
+    columns: [last_name, first_name]
+    unique: false
+    description: "Index for customer name lookups"
+
+  - name: idx_customer_type
+    columns: [customer_type]
+    unique: false
+    description: "Index for filtering by customer type"
+
+quality_rules:
+  - rule: "customer_number IS NOT NULL"
+    severity: error
+    description: "Customer number must always be present"
+
+  - rule: "customer_type IN (SELECT code FROM enum_customer_type)"
+    severity: error
+    description: "Customer type must be a valid enum value"
+
+  - rule: "CASE WHEN customer_type = 'RESIDENTIAL' THEN (first_name IS NOT NULL AND last_name IS NOT NULL) ELSE TRUE END"
+    severity: warning
+    description: "Residential customers should have first and last name"
+
+  - rule: "CASE WHEN customer_type != 'RESIDENTIAL' THEN organization_name IS NOT NULL ELSE TRUE END"
+    severity: warning
+    description: "Non-residential customers should have an organization name"
+
+  - rule: "customer_since <= CURRENT_DATE"
+    severity: error
+    description: "Customer since date cannot be in the future"
+
+gold_layer:
+  table_type: dimension
+  grain:
+    - customer_sk
+  update_frequency: daily
+  partition:
+    strategy: none
+  tags:
+    - customer
+    - pii
+    - dimension

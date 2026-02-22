@@ -1,0 +1,60 @@
+version: "1.0"
+
+audit_columns:
+  - name: created_at
+    data_type: timestamp_tz
+    nullable: false
+    default: "CURRENT_TIMESTAMP"
+    description: "Row creation timestamp"
+
+  - name: updated_at
+    data_type: timestamp_tz
+    nullable: false
+    default: "CURRENT_TIMESTAMP"
+    description: "Row last update timestamp"
+
+  - name: source_system
+    data_type: varchar
+    length: 100
+    nullable: false
+    description: "Originating source system identifier"
+
+  - name: source_record_id
+    data_type: varchar
+    length: 255
+    nullable: true
+    description: "Original record identifier in source system"
+
+  - name: batch_id
+    data_type: uuid
+    nullable: false
+    description: "Pipeline batch identifier for lineage"
+
+scd_type2_columns:
+  - name: effective_from
+    data_type: timestamp_tz
+    nullable: false
+    description: "Start of validity period"
+
+  - name: effective_to
+    data_type: timestamp_tz
+    nullable: true
+    description: "End of validity period (NULL = current)"
+
+  - name: is_current
+    data_type: boolean
+    nullable: false
+    default: "true"
+    description: "Whether this is the current version of the record"
+
+  - name: version_number
+    data_type: integer
+    nullable: false
+    default: "1"
+    description: "Sequential version number for this business key"
+
+surrogate_key_column:
+  name: "{entity}_sk"
+  data_type: bigint
+  generated: "ALWAYS AS IDENTITY"
+  description: "Surrogate key (system-generated)"

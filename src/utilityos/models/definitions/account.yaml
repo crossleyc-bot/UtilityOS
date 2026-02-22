@@ -1,0 +1,197 @@
+version: "1.0"
+
+entity:
+  name: account
+  display_name: "Account"
+  description: "A utility account representing the financial and service relationship between a customer and the utility. Each account is associated with a service address."
+  domain: customer_management
+  version: "1.0.0"
+  owner: customer_ops
+  scd_type: 2
+
+keys:
+  surrogate:
+    name: account_sk
+    data_type: bigint
+    generated: "ALWAYS AS IDENTITY"
+    description: "Surrogate key (system-generated)"
+  business:
+    - name: account_number
+      data_type: varchar
+      length: 20
+      nullable: false
+      description: "Unique business identifier for the account"
+
+foreign_keys:
+  - name: customer_sk
+    data_type: bigint
+    nullable: false
+    references:
+      entity: customer
+      key: customer_sk
+    description: "Reference to the owning customer"
+
+attributes:
+  - name: account_type
+    data_type: varchar
+    length: 50
+    nullable: false
+    description: "Account type classification"
+    enum_ref: account_type
+    scd_type: 2
+
+  - name: status
+    data_type: varchar
+    length: 50
+    nullable: false
+    description: "Account lifecycle status"
+    enum_ref: account_status
+    scd_type: 2
+
+  - name: service_address_line1
+    data_type: varchar
+    length: 255
+    nullable: false
+    description: "Service address street line 1"
+    pii_classification: quasi_identifier
+    scd_type: 2
+
+  - name: service_address_city
+    data_type: varchar
+    length: 100
+    nullable: false
+    description: "Service address city"
+    pii_classification: quasi_identifier
+    scd_type: 2
+
+  - name: service_address_state
+    data_type: varchar
+    length: 2
+    nullable: false
+    description: "Service address state abbreviation"
+    pii_classification: quasi_identifier
+    scd_type: 2
+
+  - name: service_address_zip
+    data_type: varchar
+    length: 10
+    nullable: false
+    description: "Service address ZIP/postal code"
+    pii_classification: quasi_identifier
+    scd_type: 2
+
+  - name: open_date
+    data_type: date
+    nullable: false
+    description: "Date the account was opened"
+    pii_classification: none
+    scd_type: 0
+
+  - name: close_date
+    data_type: date
+    nullable: true
+    description: "Date the account was closed (NULL if still open)"
+    pii_classification: none
+    scd_type: 2
+
+  - name: budget_billing_flag
+    data_type: boolean
+    nullable: false
+    default: "false"
+    description: "Whether the account is enrolled in budget billing"
+    pii_classification: none
+    scd_type: 2
+
+  - name: current_balance
+    data_type: numeric
+    precision: 12
+    scale: 2
+    nullable: false
+    default: "0.00"
+    description: "Current outstanding balance on the account"
+    pii_classification: none
+    scd_type: 1
+
+relationships:
+  - name: account_customer
+    type: one_to_many
+    target_entity: customer
+    foreign_key_on: account
+    foreign_key_column: customer_sk
+    description: "Each account belongs to one customer"
+
+  - name: account_billings
+    type: one_to_many
+    target_entity: billing
+    foreign_key: account_sk
+    description: "An account may have many bills"
+
+  - name: account_payments
+    type: one_to_many
+    target_entity: payment
+    foreign_key: account_sk
+    description: "An account may have many payments"
+
+  - name: account_work_orders
+    type: one_to_many
+    target_entity: work_order
+    foreign_key: account_sk
+    description: "An account may have many work orders"
+
+indexes:
+  - name: idx_account_number
+    columns: [account_number]
+    unique: true
+    description: "Unique index on business key"
+
+  - name: idx_account_customer_sk
+    columns: [customer_sk]
+    unique: false
+    description: "Index for customer lookup"
+
+  - name: idx_account_status
+    columns: [status]
+    unique: false
+    description: "Index for filtering by account status"
+
+  - name: idx_account_zip
+    columns: [service_address_zip]
+    unique: false
+    description: "Index for geographic lookups"
+
+quality_rules:
+  - rule: "account_number IS NOT NULL"
+    severity: error
+    description: "Account number must always be present"
+
+  - rule: "customer_sk IS NOT NULL"
+    severity: error
+    description: "Every account must be linked to a customer"
+
+  - rule: "open_date <= CURRENT_DATE"
+    severity: error
+    description: "Account open date cannot be in the future"
+
+  - rule: "CASE WHEN close_date IS NOT NULL THEN close_date >= open_date ELSE TRUE END"
+    severity: error
+    description: "Close date must be on or after open date"
+
+  - rule: "status IN (SELECT code FROM enum_account_status)"
+    severity: error
+    description: "Account status must be a valid enum value"
+
+  - rule: "LENGTH(service_address_state) = 2"
+    severity: warning
+    description: "State should be a 2-character abbreviation"
+
+gold_layer:
+  table_type: dimension
+  grain:
+    - account_sk
+  update_frequency: daily
+  partition:
+    strategy: none
+  tags:
+    - account
+    - customer
+    - dimension

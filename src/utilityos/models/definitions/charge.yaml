@@ -1,0 +1,93 @@
+entity:
+  name: charge
+  display_name: "Charge"
+  description: "An individual charge line item on a bill."
+  domain: "revenue_operations"
+  version: "1.0.0"
+  scd_type: 0
+  include_audit_columns: true
+
+keys:
+  surrogate:
+    name: charge_sk
+    data_type: bigint
+    generated: "ALWAYS AS IDENTITY"
+  business:
+    - name: charge_id
+      data_type: varchar
+      length: 50
+      description: "Unique charge line identifier"
+      source_of_truth: true
+
+attributes:
+  - name: billing_sk
+    data_type: bigint
+    nullable: false
+    description: "Reference to the parent bill"
+
+  - name: charge_type
+    data_type: varchar
+    length: 50
+    nullable: false
+    description: "Charge category"
+    enum_ref: charge_type
+
+  - name: charge_description
+    data_type: varchar
+    length: 255
+    nullable: true
+    description: "Human-readable charge description"
+
+  - name: amount
+    data_type: numeric
+    precision: 12
+    scale: 2
+    nullable: false
+    description: "Charge amount"
+
+  - name: quantity
+    data_type: numeric
+    precision: 12
+    scale: 4
+    nullable: true
+    description: "Quantity consumed"
+
+  - name: rate
+    data_type: numeric
+    precision: 10
+    scale: 6
+    nullable: true
+    description: "Rate applied per unit"
+
+  - name: rate_schedule
+    data_type: varchar
+    length: 50
+    nullable: true
+    description: "Rate schedule code"
+
+  - name: service_type
+    data_type: varchar
+    length: 30
+    nullable: true
+    description: "Service type this charge applies to"
+    enum_ref: service_type
+
+indexes:
+  - columns: [charge_id]
+    unique: true
+
+  - columns: [billing_sk]
+    unique: false
+
+quality_rules:
+  - rule: not_null
+    columns: [charge_id, billing_sk, charge_type, amount]
+
+  - rule: enum_valid
+    column: charge_type
+    enum_ref: charge_type
+
+gold_layer:
+  fact: true
+  grain: ["charge_sk"]
+  measures: ["amount", "quantity"]

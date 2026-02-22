@@ -1,0 +1,97 @@
+entity:
+  name: outage
+  display_name: "Outage"
+  description: "A service outage event affecting one or more customers."
+  domain: "operations_center"
+  version: "1.0.0"
+  scd_type: 1
+  include_audit_columns: true
+
+keys:
+  surrogate:
+    name: outage_sk
+    data_type: bigint
+    generated: "ALWAYS AS IDENTITY"
+  business:
+    - name: outage_number
+      data_type: varchar
+      length: 30
+      description: "Unique outage event identifier"
+      source_of_truth: true
+
+attributes:
+  - name: outage_type
+    data_type: varchar
+    length: 50
+    nullable: true
+
+  - name: status
+    data_type: varchar
+    length: 30
+    nullable: false
+    enum_ref: outage_status
+
+  - name: cause
+    data_type: varchar
+    length: 50
+    nullable: true
+    enum_ref: outage_cause
+
+  - name: start_time
+    data_type: timestamp_tz
+    nullable: false
+
+  - name: end_time
+    data_type: timestamp_tz
+    nullable: true
+
+  - name: duration_minutes
+    data_type: integer
+    nullable: true
+
+  - name: customers_affected
+    data_type: integer
+    nullable: true
+
+  - name: restoration_time
+    data_type: timestamp_tz
+    nullable: true
+
+  - name: crew_assigned
+    data_type: varchar
+    length: 100
+    nullable: true
+
+  - name: affected_area
+    data_type: varchar
+    length: 255
+    nullable: true
+
+  - name: cause_detail
+    data_type: text
+    nullable: true
+
+  - name: asset_sk
+    data_type: bigint
+    nullable: true
+    description: "Reference to the failed asset"
+
+indexes:
+  - columns: [outage_number]
+    unique: true
+
+  - columns: [start_time]
+    unique: false
+
+quality_rules:
+  - rule: not_null
+    columns: [outage_number, status, start_time]
+
+  - rule: enum_valid
+    column: status
+    enum_ref: outage_status
+
+gold_layer:
+  fact: true
+  grain: ["outage_sk"]
+  measures: ["duration_minutes", "customers_affected"]

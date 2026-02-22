@@ -1,0 +1,102 @@
+entity:
+  name: work_order
+  display_name: "Work Order"
+  description: "A service work order for field operations."
+  domain: "field_operations"
+  version: "1.0.0"
+  scd_type: 1
+  include_audit_columns: true
+
+keys:
+  surrogate:
+    name: work_order_sk
+    data_type: bigint
+    generated: "ALWAYS AS IDENTITY"
+  business:
+    - name: work_order_number
+      data_type: varchar
+      length: 30
+      description: "Unique work order identifier"
+      source_of_truth: true
+
+attributes:
+  - name: account_sk
+    data_type: bigint
+    nullable: true
+    description: "Reference to the associated account"
+
+  - name: service_point_sk
+    data_type: bigint
+    nullable: true
+    description: "Reference to the service point"
+
+  - name: work_order_type
+    data_type: varchar
+    length: 50
+    nullable: false
+    description: "Type of work to be performed"
+    enum_ref: work_order_type
+
+  - name: status
+    data_type: varchar
+    length: 30
+    nullable: false
+    description: "Work order lifecycle status"
+    enum_ref: work_order_status
+
+  - name: priority
+    data_type: varchar
+    length: 20
+    nullable: false
+    description: "Priority level"
+    enum_ref: work_order_priority
+    default: "NORMAL"
+
+  - name: description
+    data_type: text
+    nullable: true
+    description: "Detailed description of work"
+
+  - name: requested_date
+    data_type: date
+    nullable: true
+
+  - name: scheduled_date
+    data_type: date
+    nullable: true
+
+  - name: completed_date
+    data_type: date
+    nullable: true
+
+  - name: assigned_crew
+    data_type: varchar
+    length: 100
+    nullable: true
+
+  - name: notes
+    data_type: text
+    nullable: true
+
+indexes:
+  - columns: [work_order_number]
+    unique: true
+
+  - columns: [status]
+    unique: false
+
+quality_rules:
+  - rule: not_null
+    columns: [work_order_number, work_order_type, status, priority]
+
+  - rule: enum_valid
+    column: work_order_type
+    enum_ref: work_order_type
+
+  - rule: enum_valid
+    column: status
+    enum_ref: work_order_status
+
+gold_layer:
+  fact: true
+  grain: ["work_order_sk"]

@@ -1,0 +1,92 @@
+entity:
+  name: usage_interval
+  display_name: "Usage Interval"
+  description: "Interval (15-minute or hourly) usage data from AMI meters."
+  domain: "metering_operations"
+  version: "1.0.0"
+  scd_type: 0
+  include_audit_columns: true
+
+keys:
+  surrogate:
+    name: usage_interval_sk
+    data_type: bigint
+    generated: "ALWAYS AS IDENTITY"
+  business:
+    - name: usage_interval_id
+      data_type: varchar
+      length: 100
+      description: "Unique interval reading identifier"
+      source_of_truth: true
+
+attributes:
+  - name: service_point_sk
+    data_type: bigint
+    nullable: false
+    description: "Reference to the service point"
+
+  - name: meter_sk
+    data_type: bigint
+    nullable: true
+    description: "Reference to the meter"
+
+  - name: interval_start
+    data_type: timestamp_tz
+    nullable: false
+    description: "Start of the measurement interval"
+
+  - name: interval_end
+    data_type: timestamp_tz
+    nullable: false
+    description: "End of the measurement interval"
+
+  - name: interval_value
+    data_type: numeric
+    precision: 14
+    scale: 6
+    nullable: false
+    description: "Measured value for the interval"
+
+  - name: uom
+    data_type: varchar
+    length: 10
+    nullable: false
+    description: "Unit of measure"
+    enum_ref: usage_uom
+
+  - name: quality_flag
+    data_type: varchar
+    length: 20
+    nullable: true
+    description: "Data quality indicator from AMI system"
+
+  - name: channel
+    data_type: varchar
+    length: 20
+    nullable: true
+    description: "Meter channel"
+
+indexes:
+  - columns: [usage_interval_id]
+    unique: true
+
+  - columns: [service_point_sk, interval_start]
+    unique: false
+
+quality_rules:
+  - rule: not_null
+    columns: [usage_interval_id, service_point_sk, interval_start, interval_value, uom]
+
+  - rule: enum_valid
+    column: uom
+    enum_ref: usage_uom
+
+partitioning:
+  strategy: range
+  column: interval_start
+  interval: monthly
+
+gold_layer:
+  fact: true
+  grain: ["service_point_sk", "interval_start"]
+  measures: ["interval_value"]

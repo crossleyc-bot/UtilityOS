@@ -1,0 +1,158 @@
+version: "1.0"
+
+entity:
+  name: service_point
+  display_name: "Service Point"
+  description: "A point where utility service is delivered to a premise. Each service point represents a specific service type (electric, water, etc.) at a physical location and connects the premise to a meter."
+  domain: service_management
+  version: "1.0.0"
+  owner: field_ops
+  scd_type: 2
+
+keys:
+  surrogate:
+    name: service_point_sk
+    data_type: bigint
+    generated: "ALWAYS AS IDENTITY"
+    description: "Surrogate key (system-generated)"
+  business:
+    - name: service_point_number
+      data_type: varchar
+      length: 20
+      nullable: false
+      description: "Unique business identifier for the service point"
+
+foreign_keys:
+  - name: premise_sk
+    data_type: bigint
+    nullable: false
+    references:
+      entity: premise
+      key: premise_sk
+    description: "Reference to the premise where service is delivered"
+
+attributes:
+  - name: service_type
+    data_type: varchar
+    length: 50
+    nullable: false
+    description: "Type of utility service delivered at this point"
+    enum_ref: service_type
+    pii_classification: none
+    scd_type: 2
+
+  - name: status
+    data_type: varchar
+    length: 50
+    nullable: false
+    description: "Service point operational status (ACTIVE, INACTIVE, RETIRED)"
+    pii_classification: none
+    scd_type: 2
+
+  - name: install_date
+    data_type: date
+    nullable: false
+    description: "Date the service point was established"
+    pii_classification: none
+    scd_type: 0
+
+  - name: retire_date
+    data_type: date
+    nullable: true
+    description: "Date the service point was retired (NULL if still active)"
+    pii_classification: none
+    scd_type: 2
+
+  - name: location_description
+    data_type: varchar
+    length: 500
+    nullable: true
+    description: "Free-text description of the service point location (e.g., rear of building, basement)"
+    pii_classification: none
+    scd_type: 1
+
+relationships:
+  - name: service_point_premise
+    type: one_to_many
+    target_entity: premise
+    foreign_key_on: service_point
+    foreign_key_column: premise_sk
+    description: "Each service point belongs to one premise"
+
+  - name: service_point_meters
+    type: one_to_many
+    target_entity: meter
+    foreign_key: service_point_sk
+    description: "A service point may have meters installed over time"
+
+  - name: service_point_usage_monthly
+    type: one_to_many
+    target_entity: usage_monthly
+    foreign_key: service_point_sk
+    description: "A service point has monthly usage records"
+
+  - name: service_point_usage_interval
+    type: one_to_many
+    target_entity: usage_interval
+    foreign_key: service_point_sk
+    description: "A service point has interval usage records"
+
+  - name: service_point_work_orders
+    type: one_to_many
+    target_entity: work_order
+    foreign_key: service_point_sk
+    description: "A service point may have work orders associated with it"
+
+indexes:
+  - name: idx_service_point_number
+    columns: [service_point_number]
+    unique: true
+    description: "Unique index on business key"
+
+  - name: idx_service_point_premise_sk
+    columns: [premise_sk]
+    unique: false
+    description: "Index for premise lookup"
+
+  - name: idx_service_point_service_type
+    columns: [service_type]
+    unique: false
+    description: "Index for filtering by service type"
+
+  - name: idx_service_point_status
+    columns: [status]
+    unique: false
+    description: "Index for filtering by status"
+
+quality_rules:
+  - rule: "service_point_number IS NOT NULL"
+    severity: error
+    description: "Service point number must always be present"
+
+  - rule: "premise_sk IS NOT NULL"
+    severity: error
+    description: "Every service point must be linked to a premise"
+
+  - rule: "service_type IN (SELECT code FROM enum_service_type)"
+    severity: error
+    description: "Service type must be a valid enum value"
+
+  - rule: "install_date <= CURRENT_DATE"
+    severity: error
+    description: "Install date cannot be in the future"
+
+  - rule: "CASE WHEN retire_date IS NOT NULL THEN retire_date >= install_date ELSE TRUE END"
+    severity: error
+    description: "Retire date must be on or after install date"
+
+gold_layer:
+  table_type: dimension
+  grain:
+    - service_point_sk
+  update_frequency: daily
+  partition:
+    strategy: none
+  tags:
+    - service_point
+    - service
+    - dimension
