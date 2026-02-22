@@ -204,7 +204,11 @@ class SeedRunner:
                     if gold_table is not None:
                         self._gold_tables[name] = gold_table
 
-        # Create all tables in the database
+        # Drop existing tables (reverse order for FK deps) then create
+        gold_meta.drop_all(self.engine)
+        silver_meta.drop_all(self.engine)
+        bronze_meta.drop_all(self.engine)
+
         bronze_meta.create_all(self.engine)
         silver_meta.create_all(self.engine)
         gold_meta.create_all(self.engine)

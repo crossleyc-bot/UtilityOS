@@ -121,7 +121,10 @@ def _safe_count(conn, table_ref: str) -> int:
     from sqlalchemy import text as sa_text
 
     try:
+        conn.execute(sa_text("SAVEPOINT safe_count"))
         result = conn.execute(sa_text(f"SELECT COUNT(*) FROM {table_ref}"))
+        conn.execute(sa_text("RELEASE SAVEPOINT safe_count"))
         return result.scalar() or 0
     except Exception:
+        conn.execute(sa_text("ROLLBACK TO SAVEPOINT safe_count"))
         return 0
