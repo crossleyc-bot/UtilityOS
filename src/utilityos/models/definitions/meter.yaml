@@ -32,6 +32,11 @@ foreign_keys:
     description: "Reference to the service point where the meter is currently installed (NULL if in inventory)"
 
 attributes:
+  - name: service_point_sk
+    data_type: bigint
+    nullable: true
+    description: "Reference to the service point where the meter is installed"
+
   - name: meter_type
     data_type: varchar
     length: 50
@@ -186,13 +191,7 @@ quality_rules:
     description: "Meter must have at least one register"
 
 gold_layer:
-  table_type: dimension
+  dimension: true
+  dimension_type: "SCD2"
   grain:
     - meter_sk
-  update_frequency: daily
-  partition:
-    strategy: none
-  tags:
-    - meter
-    - metering
-    - dimension

@@ -81,6 +81,20 @@ def generate_silver_table(
     return generate_table(entity_def, metadata, common)
 
 
+def _copy_column_for_gold(col: Column) -> Column:  # type: ignore[type-arg]
+    """Copy a column, stripping Identity so gold tables receive values from silver."""
+    kwargs: dict = {}
+    if col.primary_key:
+        kwargs["primary_key"] = True
+    if col.nullable is not None:
+        kwargs["nullable"] = col.nullable
+    if col.comment:
+        kwargs["comment"] = col.comment
+    if col.server_default is not None and col.identity is None:
+        kwargs["server_default"] = col.server_default
+    return Column(col.name, col.type, **kwargs)
+
+
 def generate_gold_dimension_table(
     entity_def: EntityDefinition,
     metadata: MetaData,
@@ -93,15 +107,12 @@ def generate_gold_dimension_table(
     if entity_def.gold_layer is None or not entity_def.gold_layer.dimension:
         return None
 
-    # For SCD2 dimensions, the gold table mirrors silver structure
-    # with a dim_ prefix
+    # Generate silver structure as reference
     gold_metadata = MetaData(schema=metadata.schema)
-
-    # Reuse the silver table structure but with dim_ prefix
     silver_table = generate_table(entity_def, gold_metadata, common)
 
-    # Create a new table with dim_ prefix
-    dim_columns = [col.copy() for col in silver_table.columns]
+    # Copy columns, stripping Identity from surrogate key
+    dim_columns = [_copy_column_for_gold(col) for col in silver_table.columns]
     return Table(
         f"dim_{entity_def.entity.name}",
         metadata,
@@ -122,11 +133,12 @@ def generate_gold_fact_table(
     if entity_def.gold_layer is None or not entity_def.gold_layer.fact:
         return None
 
-    # Fact tables mirror the silver structure with fact_ prefix
+    # Generate silver structure as reference
     gold_metadata = MetaData(schema=metadata.schema)
     silver_table = generate_table(entity_def, gold_metadata, common)
 
-    fact_columns = [col.copy() for col in silver_table.columns]
+    # Copy columns, stripping Identity from surrogate key
+    fact_columns = [_copy_column_for_gold(col) for col in silver_table.columns]
     return Table(
         f"fact_{entity_def.entity.name}",
         metadata,

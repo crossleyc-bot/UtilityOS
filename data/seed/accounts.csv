@@ -1,0 +1,13 @@
+account_number,customer_number,account_type,status,service_address_line1,service_address_city,service_address_state,service_address_zip,open_date,budget_billing_flag,current_balance
+A-20001,C-10001,STANDARD,ACTIVE,123 Oak Street,Springfield,IL,62701,2018-01-15,false,145.50
+A-20002,C-10002,STANDARD,ACTIVE,456 Maple Avenue,Springfield,IL,62702,2019-03-22,true,0.00
+A-20003,C-10003,STANDARD,ACTIVE,789 Pine Road,Springfield,IL,62703,2015-07-10,false,89.25
+A-20004,C-10004,STANDARD,ACTIVE,321 Elm Street,Springfield,IL,62701,2020-11-01,false,210.75
+A-20005,C-10005,STANDARD,INACTIVE,654 Cedar Lane,Springfield,IL,62704,2017-05-20,false,0.00
+A-20006,C-10006,BUDGET_BILLING,ACTIVE,987 Birch Way,Springfield,IL,62702,2021-02-14,true,95.00
+A-20007,C-10007,STANDARD,ACTIVE,147 Willow Court,Springfield,IL,62703,2016-09-30,false,178.30
+A-20008,C-10008,STANDARD,ACTIVE,2000 Industrial Parkway,Springfield,IL,62711,2014-01-01,false,3250.00
+A-20009,C-10008,STANDARD,ACTIVE,2050 Industrial Parkway,Springfield,IL,62711,2016-03-01,false,1875.50
+A-20010,C-10009,MASTER,ACTIVE,100 Education Drive,Springfield,IL,62706,2012-06-15,false,4500.00
+A-20011,C-10009,STANDARD,ACTIVE,200 School Lane,Springfield,IL,62706,2012-06-15,false,2100.00
+A-20012,C-10010,STANDARD,ACTIVE,555 Main Street,Springfield,IL,62701,2019-08-01,false,325.00

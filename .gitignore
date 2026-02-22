@@ -43,8 +43,10 @@ coverage.xml
 Thumbs.db
 
 # Data
-/data/
+/data/*
+!/data/seed/
 *.csv
+!/data/seed/*.csv
 *.parquet
 
 # Alembic

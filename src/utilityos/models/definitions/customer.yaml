@@ -167,13 +167,7 @@ quality_rules:
     description: "Customer since date cannot be in the future"
 
 gold_layer:
-  table_type: dimension
+  dimension: true
+  dimension_type: "SCD2"
   grain:
     - customer_sk
-  update_frequency: daily
-  partition:
-    strategy: none
-  tags:
-    - customer
-    - pii
-    - dimension

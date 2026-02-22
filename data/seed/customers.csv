@@ -1,0 +1,11 @@
+customer_number,first_name,last_name,organization_name,customer_type,status,email_address,phone_primary,customer_since
+C-10001,John,Smith,,RESIDENTIAL,ACTIVE,john.smith@email.com,555-0101,2018-01-15
+C-10002,Jane,Doe,,RESIDENTIAL,ACTIVE,jane.doe@email.com,555-0102,2019-03-22
+C-10003,Robert,Johnson,,RESIDENTIAL,ACTIVE,rjohnson@email.com,555-0103,2015-07-10
+C-10004,Maria,Garcia,,RESIDENTIAL,ACTIVE,mgarcia@email.com,555-0104,2020-11-01
+C-10005,Michael,Brown,,RESIDENTIAL,INACTIVE,mbrown@email.com,555-0105,2017-05-20
+C-10006,Sarah,Wilson,,RESIDENTIAL,ACTIVE,swilson@email.com,555-0106,2021-02-14
+C-10007,David,Lee,,RESIDENTIAL,ACTIVE,dlee@email.com,555-0107,2016-09-30
+C-10008,,,"Acme Manufacturing Inc",COMMERCIAL,ACTIVE,billing@acmemfg.com,555-0200,2014-01-01
+C-10009,,,"Springfield School District",MUNICIPAL,ACTIVE,facilities@springfieldsd.org,555-0300,2012-06-15
+C-10010,,,"Quick Stop Convenience",COMMERCIAL,ACTIVE,owner@quickstop.com,555-0201,2019-08-01

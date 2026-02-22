@@ -1,0 +1,11 @@
+premise_number,address_line1,city,state,zip_code,premise_type,latitude,longitude
+P-30001,123 Oak Street,Springfield,IL,62701,SINGLE_FAMILY,39.7817,-89.6501
+P-30002,456 Maple Avenue,Springfield,IL,62702,SINGLE_FAMILY,39.7834,-89.6489
+P-30003,789 Pine Road,Springfield,IL,62703,SINGLE_FAMILY,39.7856,-89.6478
+P-30004,321 Elm Street,Springfield,IL,62701,SINGLE_FAMILY,39.7801,-89.6510
+P-30005,654 Cedar Lane,Springfield,IL,62704,SINGLE_FAMILY,39.7878,-89.6456
+P-30006,987 Birch Way,Springfield,IL,62702,SINGLE_FAMILY,39.7845,-89.6490
+P-30007,147 Willow Court,Springfield,IL,62703,SINGLE_FAMILY,39.7867,-89.6467
+P-30008,2000 Industrial Parkway,Springfield,IL,62711,INDUSTRIAL,39.7920,-89.6380
+P-30009,100 Education Drive,Springfield,IL,62706,MUNICIPAL,39.7890,-89.6420
+P-30010,555 Main Street,Springfield,IL,62701,COMMERCIAL,39.7810,-89.6500
